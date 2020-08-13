@@ -1,0 +1,1 @@
+# demo-quay-on-openshift
