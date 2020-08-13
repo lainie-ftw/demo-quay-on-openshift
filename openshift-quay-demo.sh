@@ -6,7 +6,7 @@
 pullsecretfile="quay-secret-config.json"
 quayconfigfile="quay-ecosystem.yaml"
 
-clusterrooturl="cluster-quay-6f8a.quay-6f8a.example.opentlc.com"
+clusterrooturl="cluster-lan-fe6a.lan-fe6a.example.opentlc.com"
 clusterapiurl="https://api.${clusterrooturl}:6443/"
 
 #Setting up some colors for helping read the demo output
@@ -21,46 +21,40 @@ reset=$(tput sgr0)
 #Let's do this thing...
 read -p "${green}Welcome to the Quay on OpenShift demo! Press enter to proceed. ${reset}"
 
-read -p "${blue}1. Login to the cluster.${reset}"
+read -p "${blue}Login to the cluster.${reset}"
 oc login ${clusterapiurl}
 
-read -p "${blue}2. Enter a project name to create: " project
+read -p "${green}*** We'll start by installing and setting up Quay itself via the Quay operator. ***${reset}"
+
+read -p "${blue}Enter a project name to create for Quay to run in: " project
 echo "${reset}"
 oc new-project ${project}
-quayurl="example-quayecosystem-quay-${project}.apps.${clusterrooturl}"
+quayurl="quayecosystem-quay-${project}.apps.${clusterrooturl}"
 
+#delete the limitrange on the project - proceed with caution!
+oc delete limitrange ${project}-core-resource-limits
 
-read -p "${blue}3. Delete project limitrange? [y/n] " deletelimit 
-echo "${reset}"
-if [ $deletelimit == "y" ]
-then
-	oc delete limitrange ${project}-core-resource-limits
-fi
-
-read -p "${blue}4. Apply the secret to the project.${reset}"
+read -p "${blue}Apply the image pull secret to the ${project} project.${reset}"
 oc create secret generic redhat-pull-secret --from-file=".dockerconfigjson=${pullsecretfile}" --type='kubernetes.io/dockerconfigjson'
 
-read -p "${green}5. Pause the script to apply the operator to ${project} in the UI.${reset}"
+read -p "${green}Apply the operator to the ${project} project in the UI.${reset}"
 
-read -p "${blue}6. Show off the super cool Quay config file.${reset}"
+read -p "${blue}Show off the super cool Quay config file.${reset}"
 cat ${quayconfigfile}
 
-read -p "${blue}7. Apply the super cool Quay config file. ${reset}"
+read -p "${blue}Apply the super cool Quay config file. ${reset}"
 oc create -f ${quayconfigfile}
 
-read -p "${green}8. Pause to watch the pods spin up and answer any questions, and then log in to Quay.${reset}"
+read -p "${green}Watch the pods spin up and answer any questions, and then log in to Quay.${reset}"
 
-read -p "${blue}9. Use skopeo to copy an image from Quay.io into the new Quay.${reset}"
+read -p "${blue}Use skopeo to copy an image from Quay.io into the new Quay.${reset}"
 echo -e "skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7 --dest-creds=u:p --dest-tls-verify=false\n"
-skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7 --dest-creds=quay:password --dest-tls-verify=false
+sudo podman login quay.io
+skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7-laine --dest-creds=admin:password --dest-tls-verify=false
 
-echo "${green}10. Show off mirroring in the UI! ${reset}"
+echo "${green}*** Set up and show off Quay mirroring! ***${reset}"
 
-read -p "${blue}11. Show what happens when you delete the super cool Quay config file from the project? [y/n] " deleteconfigfile
-if [ $deleteconfigfile == "y" ]
-then
-	oc delete -f ${quayconfigfile}
-fi
+echo "${green}*** Install the cluster security operator to show Quay and Clair integration on the main OpenShift admin view dashboard. ***${reset}"
 
 
 
