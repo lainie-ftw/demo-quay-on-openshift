@@ -50,24 +50,8 @@ read -p "${green}Watch the pods spin up and answer any questions, and then log i
 read -p "${blue}Use skopeo to copy an image from Quay.io into the new Quay.${reset}"
 echo -e "skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7 --dest-creds=u:p --dest-tls-verify=false\n"
 sudo podman login quay.io
-skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7-laine --dest-creds=admin:password --dest-tls-verify=false
+skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7-laine --dest-creds=quay:password --dest-tls-verify=false
 
 echo "${green}*** Set up and show off Quay mirroring! ***${reset}"
 
 echo "${green}*** Install the cluster security operator to show Quay and Clair integration on the main OpenShift admin view dashboard. ***${reset}"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
