@@ -1,10 +1,10 @@
 #!/usr/bin/env bash 
 
-# author: Laine Vyvyan @lainie-ftw laine.vyvyan@gmail.com
+# author: Laine Minor @lainie-ftw lainelminor@gmail.com
 
 #Set up some variables
-pullsecretfile="quay-secret-config.json"
-quayconfigfile="quay-ecosystem.yaml"
+noobaaconfigfile="resources/noobaa.yml"
+quayconfigfile="resources/quay.yaml"
 
 clusterrooturl="cluster-lan-fe6a.lan-fe6a.example.opentlc.com"
 clusterapiurl="https://api.${clusterrooturl}:6443/"
@@ -24,18 +24,21 @@ read -p "${green}Welcome to the Quay on OpenShift demo! Press enter to proceed. 
 read -p "${blue}Login to the cluster.${reset}"
 oc login ${clusterapiurl}
 
-read -p "${green}*** We'll start by installing and setting up Quay itself via the Quay operator. ***${reset}"
+read -p "${green}*** First, we'll enable OpenShift Container Storage via operator. ***${reset}"
+
+read -p "${green}*** Next, we'll create a Noobaa object for Quay to use as its object storage. ***${reset}"
+
+oc apply -f ${noobaaconfigfile} -n openshift-storage
+
+read -p "${green}*** Now we'll install Quay itself via the Quay operator. ***${reset}"
 
 read -p "${blue}Enter a project name to create for Quay to run in: " project
 echo "${reset}"
 oc new-project ${project}
-quayurl="quayecosystem-quay-${project}.apps.${clusterrooturl}"
+quayurl="example-registry-quay-${project}.apps.${clusterrooturl}"
 
 #delete the limitrange on the project - proceed with caution!
 oc delete limitrange ${project}-core-resource-limits
-
-read -p "${blue}Apply the image pull secret to the ${project} project.${reset}"
-oc create secret generic redhat-pull-secret --from-file=".dockerconfigjson=${pullsecretfile}" --type='kubernetes.io/dockerconfigjson'
 
 read -p "${green}Apply the operator to the ${project} project in the UI.${reset}"
 
@@ -45,12 +48,12 @@ cat ${quayconfigfile}
 read -p "${blue}Apply the super cool Quay config file. ${reset}"
 oc create -f ${quayconfigfile}
 
-read -p "${green}Watch the pods spin up and answer any questions, and then log in to Quay.${reset}"
+read -p "${green}Watch the pods spin up and answer any questions, and then create a user in the Quay UI with user ID of 'quay' and password of 'password'${reset}"
 
 read -p "${blue}Use skopeo to copy an image from Quay.io into the new Quay.${reset}"
 echo -e "skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7 --dest-creds=u:p --dest-tls-verify=false\n"
 sudo podman login quay.io
-skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7-laine --dest-creds=quay:password --dest-tls-verify=false
+skopeo copy docker://quay.io/lainieftw/python-27-rhel7 docker://${quayurl}/quay/python-27-rhel7 --dest-creds=quay:password --dest-tls-verify=false
 
 echo "${green}*** Set up and show off Quay mirroring! ***${reset}"
 
